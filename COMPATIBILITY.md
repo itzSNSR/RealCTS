@@ -1,0 +1,27 @@
+# Compatibility and test matrix
+
+The APK declares minimum API 28 and target API 36. Runtime success requires observing Google’s native selection overlay, searching an item, dismissing the overlay back to the same app, and checking the saved assistant afterward.
+
+| Manufacturer | Android versions in scope | Assistant registration / gesture | Native overlay / restoration |
+|---|---|---|---|
+| Samsung One UI / Core | 10–16 | Not tested | Not tested |
+| Motorola | 10–16 | Not tested | Not tested |
+| Vivo / iQOO | 10–16 | Not tested | Not tested |
+| OPPO / Realme | 10–16 | Not tested | Not tested |
+| OnePlus | 10–16 | Not tested | Not tested |
+| Xiaomi / Redmi / POCO | 10–16 | Not tested | Not tested |
+| Google Pixel | 10–16 | Not tested | Not tested |
+| Nothing, HMD / Nokia, ASUS, Sony, Lenovo, Tecno, Infinix and other Android | 9–16 | Not tested | Not tested |
+
+No device test results have been submitted. “Verified working” and “verified failing” require a device observation with the exact build and mode. “Unsupported” applies to a specific missing platform prerequisite, such as installation below API 28, a missing Google app, CSService without an authorized framework endpoint, or switched VIS without its ADB grant. No manufacturer-wide failure is inferred.
+
+## Gesture differences
+
+- Samsung documents Home/navigation-handle hold for native Circle to Search on supported models, with assistant gesture behavior depending on navigation and Side button settings. Check both the system assistant choice and the configured gesture. [Samsung assistant settings](https://www.samsung.com/us/support/answer/ANS10001575/)
+- Motorola documents a **Swipe to invoke assistant** switch under gesture navigation for the edge (2024). Confirm the equivalent setting on the test model. [Motorola gesture guide](https://en-us.support.motorola.com/app/answers/detail/a_id/180165/)
+- Vivo/iQOO, OPPO/Realme/OnePlus and Xiaomi firmware can expose different navigation and assistant choices by region. If the system does not dispatch ASSIST for the selected gesture, use the tile to test the trigger independently. RealCTS does not remap Jovi, an OEM power button, or a launcher’s private gesture.
+- On Pixel and other phones with the existing feature, try the built-in Home/navigation-handle hold before changing assistant. Android exposes no public API for verifying Google’s per-device eligibility or a successful overlay. [Google’s Circle to Search instructions](https://support.google.com/websearch/answer/14508957)
+
+## Manual evidence to record
+
+Record the model, firmware build, Android API, Google app version, default assistant, enabled routes, and pre-test voice component. Test the dashboard and gesture separately. Confirm the selection interaction, original foreground app after dismissal, repeated invocations, denial with the grant absent, and restoration after a successful or interrupted switch. Record observed and expected outcomes independently. A screenshot of the app dashboard or an accepted Binder request alone does not establish overlay success.

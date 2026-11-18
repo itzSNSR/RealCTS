@@ -1,0 +1,1 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android"><shortcut android:shortcutId="circle" android:icon="@drawable/mark" android:shortcutShortLabel="@string/circle"><intent android:action="android.intent.action.VIEW" android:targetPackage="com.realcts.app" android:targetClass="com.realcts.app.LocalEntry"/></shortcut></shortcuts>

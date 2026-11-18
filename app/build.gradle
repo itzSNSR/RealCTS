@@ -1,0 +1,41 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.realcts.app'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.realcts.app'
+        minSdk 28
+        targetSdk 36
+        versionCode 1
+        versionName '1.0'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    def releaseStore = System.getenv('REALCTS_KEYSTORE')
+    if (releaseStore) {
+        signingConfigs {
+            release {
+                storeFile file(releaseStore)
+                storePassword System.getenv('REALCTS_STORE_PASSWORD')
+                keyAlias System.getenv('REALCTS_KEY_ALIAS')
+                keyPassword System.getenv('REALCTS_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        configureEach {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        release { if (releaseStore) signingConfig signingConfigs.release }
+    }
+}
+dependencies {
+    implementation 'com.google.android.material:material:1.12.0'
+    compileOnly 'io.github.libxposed:api:101.0.1'
+    testImplementation 'junit:junit:4.13.2'
+}
