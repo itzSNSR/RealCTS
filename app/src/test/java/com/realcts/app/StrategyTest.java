@@ -9,26 +9,33 @@ import static com.realcts.app.TriggerStrategyManager.choose;
 public class StrategyTest {
     @Test public void googleMissingAlwaysStops() {
         for (TriggerStrategyManager.Mode mode : TriggerStrategyManager.Mode.values())
-            assertEquals(Route.Unavailable, choose(mode, false, true, true, true, true, true));
+            assertEquals(Route.Unavailable, choose(mode, false, true, true, true, true, true, false));
+    }
+    @Test public void automaticNeverRequiresElevatedAccess() {
+        assertEquals(Route.Unavailable, choose(Automatic, true, false, true, true, false, true, false));
+    }
+    @Test public void advertisedActionNeedsNoGrant() {
+        assertEquals(Route.SearchScreen, choose(Automatic, true, false, false, false, false, false, true));
+        assertEquals(Route.Unavailable, choose(SearchScreen, false, false, false, false, false, false, true));
     }
     @Test public void configuredHelperAvoidsSwitch() {
-        assertEquals(Route.CSHelper, choose(Automatic, true, true, true, true, false, true));
+        assertEquals(Route.CSHelper, choose(Automatic, true, true, true, true, false, true, false));
     }
     @Test public void authenticatedServiceAvoidsSwitch() {
-        assertEquals(Route.CSService, choose(Automatic, true, false, true, true, false, true));
+        assertEquals(Route.CSService, choose(CSService, true, false, true, true, false, true, false));
     }
     @Test public void activeGoogleNeedsNoGrant() {
-        assertEquals(Route.Direct, choose(VIS, true, false, false, true, true, false));
+        assertEquals(Route.Direct, choose(VIS, true, false, false, true, true, false, false));
     }
     @Test public void authorizedSwitchOnly() {
-        assertEquals(Route.Switch, choose(VIS, true, false, false, true, false, true));
-        assertEquals(Route.Unavailable, choose(VIS, true, false, false, true, false, false));
+        assertEquals(Route.Switch, choose(VIS, true, false, false, true, false, true, false));
+        assertEquals(Route.Unavailable, choose(VIS, true, false, false, true, false, false, false));
     }
     @Test public void noNativeEvidenceStopsVoiceRoute() {
-        assertEquals(Route.Unavailable, choose(Automatic, true, false, false, false, true, true));
+        assertEquals(Route.Unavailable, choose(Automatic, true, false, false, false, true, true, false));
     }
     @Test public void manualSelectionNeverFallsThrough() {
-        assertEquals(Route.Unavailable, choose(CSHelper, true, false, true, true, true, true));
-        assertEquals(Route.Unavailable, choose(CSService, true, true, false, true, true, true));
+        assertEquals(Route.Unavailable, choose(CSHelper, true, false, true, true, true, true, false));
+        assertEquals(Route.Unavailable, choose(CSService, true, true, false, true, true, true, false));
     }
 }

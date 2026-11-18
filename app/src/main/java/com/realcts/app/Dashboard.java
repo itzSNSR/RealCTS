@@ -62,7 +62,7 @@ public final class Dashboard extends AppCompatActivity {
     private void refresh() {
         caps = new Capabilities(this);
         int token = ++generation;
-        boolean enabled = prefs.getBoolean("module", false);
+        boolean enabled = prefs.getBoolean("module", false) && (State.mode(this) == TriggerStrategyManager.Mode.CSHelper || State.mode(this) == TriggerStrategyManager.Mode.CSService);
         moduleStatus = ModuleLink.unavailable(enabled ? "Checking System UI…" : "Module checks disabled");
         render();
         if (enabled) probes.execute(() -> {
@@ -95,7 +95,8 @@ public final class Dashboard extends AppCompatActivity {
                 section("Device status"); para(status());
                 section("Last trigger"); para(last());
                 action("Test Circle to Search", this::test, true);
-                action("Set as default assistant", () -> Registration.open(this, true), false);
+                action("Setup without a computer", () -> { step = 4; go(Page.Setup); }, false);
+                assistantChoice();
                 action("Guided setup", () -> { step = 0; go(Page.Setup); }, false);
                 action("Configure permissions", () -> go(Page.Permissions), false);
                 action("Advanced settings", () -> go(Page.Advanced), false);
@@ -144,19 +145,60 @@ public final class Dashboard extends AppCompatActivity {
     }
     private String last() { return prefs.getString("last", "No request recorded"); }
     private void test() { startActivity(new Intent(this, LocalEntry.class)); }
+    private void assistantChoice() {
+        boolean independent = caps.helper || caps.googleTarget && SearchActionService.available();
+        if (independent || State.mode(this) != TriggerStrategyManager.Mode.Automatic) {
+            action("Set RealCTS as assistant", () -> Registration.open(this, true), false);
+        } else if (!caps.googleActive) {
+            para("For this setup, select Google in Digital assistant app. Return here to test, then use the RealCTS tile over another app.");
+            action("Choose Google in Android settings", () -> Registration.open(this, false), true);
+        } else {
+            para("Google voice service is active. To open Circle to Search from the assistant gesture, enable the switch below and RealCTS Search screen in Accessibility. RealCTS dismisses the supported Google assistant panel when it appears.");
+            toggle("Open Circle to Search when Assistant opens", "assistantPanel");
+            if (prefs.getBoolean("assistantPanel", false) && !SearchActionService.isConnected())
+                action("Open Accessibility settings", () -> startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)), true);
+            tileSetup();
+        }
+    }
+    private void tileSetup() {
+        if (Build.VERSION.SDK_INT < 33) {
+            para("Open Quick Settings, tap Edit and add Circle to Search.");
+            return;
+        }
+        action("Add Circle to Search tile", () -> {
+            android.app.StatusBarManager bar = getSystemService(android.app.StatusBarManager.class);
+            if (bar == null) return;
+            bar.requestAddTileService(new ComponentName(this, SearchTile.class), "Circle to Search",
+                    android.graphics.drawable.Icon.createWithResource(this, R.drawable.tile), getMainExecutor(),
+                    result -> Toast.makeText(this, result == android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED
+                            || result == android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED
+                            ? "Circle to Search is in Quick Settings." : "Open Quick Settings, tap Edit and add Circle to Search.", Toast.LENGTH_LONG).show());
+        }, false);
+    }
     private void wizard() {
         para("Step " + (step + 1) + " of " + STEPS.length); title(STEPS[step]);
         switch (step) {
             case 0: para(device()); para("If holding Home or the navigation handle already opens Google’s selection overlay, you can keep your current assistant."); break;
             case 1: para(caps.googleInstalled ? "Google app is enabled." : "Install or enable the Google app in this profile.");
                 para(caps.nativeActivity ? "A Google contextual search activity is visible." : "No matching Google contextual activity is visible."); break;
-            case 2: para("Choose RealCTS under Digital assistant app if you want Android to send it your assistant gesture.");
-                action("Choose assistant", () -> Registration.open(this, true), true);
+            case 2: assistantChoice();
                 action("Open Android assistant settings", () -> Registration.open(this, false), false); break;
-            case 3: para("Automatic mode checks the configured helper, an enabled module, and Google’s voice service. Current route · " + route());
+            case 3: para("Automatic mode checks the firmware helper, the native Search screen action, and Google’s active voice service. Current route · " + route());
                 action("Choose mode", this::chooseMode, false); break;
-            case 4: para("A temporary voice-service switch is the only route that needs the ADB grant. The helper and direct routes need no settings changes.");
-                permissionControls(); break;
+            case 4: para("Use Automatic mode for setup without a computer. If a route is already available, continue to the test.");
+                if (State.mode(this) != TriggerStrategyManager.Mode.Automatic)
+                    action("Use Automatic mode", () -> { prefs.edit().putString("mode", "Automatic").apply(); refresh(); }, true);
+                if (Build.VERSION.SDK_INT >= 30) {
+                    para("For a RealCTS assistant gesture, first check for a CSHelper or SearchScreen route. Accessibility can detect the launcher’s Search screen action if available. If neither route appears, keep Google selected and use the tile.");
+                    action("Open Accessibility settings", () -> {
+                        try { startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)); }
+                        catch (ActivityNotFoundException e) { Toast.makeText(this, "Open Accessibility in Android Settings.", Toast.LENGTH_LONG).show(); }
+                    }, false);
+                }
+                para("Alternatively, select Google as digital assistant, then try Test Circle to Search or the RealCTS Quick Settings tile. Google must support native search on this phone.");
+                action("Open assistant settings", () -> Registration.open(this, false), false);
+                para("Candidate route · " + route());
+                action("Recheck this phone", this::refresh, false); break;
             case 5: para("Run a test. Look for Google’s search bar and try circling text. Close the overlay with Back.");
                 action("Test Circle to Search", this::test, true); break;
             case 6: para("Open a different app. Use the configured Home hold or assistant gesture, circle an item, then press Back. If the gesture is reserved by the phone, try the RealCTS Quick Settings tile.");

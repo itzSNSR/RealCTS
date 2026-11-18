@@ -22,10 +22,12 @@ final class NativeCircleTrigger {
         Bundle args = new Bundle();
         args.putLong("invocation_time_ms", SystemClock.elapsedRealtime());
         args.putInt("omni.entry_point", 1);
-        // On configured AOSP builds disable the legacy fallback for CSHelper.
-        if (!caps.key.isEmpty()) args.putInt(caps.key, 1);
-        if (!caps.legacyKey.isEmpty()) args.putBoolean(caps.legacyKey, !helper);
-        if (!caps.helperEnabledKey.isEmpty()) args.putBoolean(caps.helperEnabledKey, helper);
+        // Direct Google requests use the upstream payload. Let the firmware select its handler.
+        if (helper) {
+            args.putInt(caps.key, 1);
+            args.putBoolean(caps.legacyKey, false);
+            if (!caps.helperEnabledKey.isEmpty()) args.putBoolean(caps.helperEnabledKey, true);
+        }
 
         Parcel data = Parcel.obtain();
         Parcel reply = Parcel.obtain();

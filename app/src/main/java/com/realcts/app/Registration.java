@@ -25,8 +25,8 @@ final class Registration {
                 catch (ActivityNotFoundException | SecurityException ignored) { }
             }
         }
-        for (String action : new String[]{Settings.ACTION_VOICE_INPUT_SETTINGS,
-                Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS, Settings.ACTION_SETTINGS}) {
+        for (String action : new String[]{Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS,
+                Settings.ACTION_VOICE_INPUT_SETTINGS, Settings.ACTION_SETTINGS}) {
             try { a.startActivity(new Intent(action)); return; }
             catch (ActivityNotFoundException | SecurityException ignored) { }
         }

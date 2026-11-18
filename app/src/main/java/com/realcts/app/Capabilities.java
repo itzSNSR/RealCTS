@@ -82,6 +82,11 @@ final class Capabilities {
         return id == 0 ? "" : r.getString(id);
     }
     boolean visCandidate() {
-        return Build.VERSION.SDK_INT <= 36 && nativeActivity && (configuredPackage.isEmpty() || googleTarget);
+        return supportsVoiceRequest(Build.VERSION.SDK_INT, googleActive, nativeActivity, configuredPackage);
+    }
+    static boolean supportsVoiceRequest(int sdk, boolean googleActive, boolean visibleActivity, String provider) {
+        // A private Google handler may be invisible to package queries. CTSV and CircleKey
+        // use the active Google voice service as their precondition in that case.
+        return sdk <= 36 && (googleActive || visibleActivity) && (provider.isEmpty() || GOOGLE.equals(provider));
     }
 }

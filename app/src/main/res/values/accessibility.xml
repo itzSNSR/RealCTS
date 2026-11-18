@@ -1,0 +1,3 @@
+<resources>
+    <string name="search_action_description">Run the built-in Search screen action where supported. With assistant-panel mode enabled, observe Google window class changes, dismiss the assistant panel, and open Circle to Search. RealCTS does not read screen content or record audio.</string>
+</resources>

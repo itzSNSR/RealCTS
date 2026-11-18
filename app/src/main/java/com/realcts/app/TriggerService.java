@@ -50,7 +50,7 @@ public final class TriggerService extends Service {
             Thread.sleep(tile ? Math.max(600, delay) : delay);
             Capabilities caps = new Capabilities(this);
             TriggerStrategyManager.Mode mode = State.mode(this);
-            boolean probe = p.getBoolean("module", false) && mode != TriggerStrategyManager.Mode.VIS;
+            boolean probe = p.getBoolean("module", false) && (mode == TriggerStrategyManager.Mode.CSService || mode == TriggerStrategyManager.Mode.CSHelper);
             ModuleLink.Status module = probe ? ModuleLink.inspect(this) : ModuleLink.unavailable("Module use is disabled");
             TriggerStrategyManager.Route route = TriggerStrategyManager.select(mode, caps, module,
                     p.getBoolean("switch", false));
@@ -58,7 +58,9 @@ public final class TriggerService extends Service {
                 throw new IllegalStateException(reason(caps, mode, module));
             if (route == TriggerStrategyManager.Route.Switch) switcher.acquire(caps.googleVoice);
             boolean useHelperModule = route == TriggerStrategyManager.Route.CSHelper && module.helperReady();
-            if (route == TriggerStrategyManager.Route.CSService || useHelperModule) {
+            if (route == TriggerStrategyManager.Route.SearchScreen) {
+                accepted = SearchActionService.request();
+            } else if (route == TriggerStrategyManager.Route.CSService || useHelperModule) {
                 String result = ModuleLink.request(this, useHelperModule ? ModuleLink.START_HELPER : ModuleLink.START);
                 if (!"ready".equals(result)) throw new IllegalStateException(result);
                 accepted = true;
@@ -93,6 +95,8 @@ public final class TriggerService extends Service {
 
     private String reason(Capabilities c, TriggerStrategyManager.Mode mode, ModuleLink.Status module) {
         if (!c.googleInstalled) return "Google app missing or disabled in this Android profile.";
+        if (mode == TriggerStrategyManager.Mode.SearchScreen) return "Enable RealCTS Search screen in Accessibility. This route needs an advertised Search screen action and Google as the firmware search provider.";
+        if (mode == TriggerStrategyManager.Mode.Automatic) return "No native route available now. Open RealCTS → Setup without a computer, or select Google as digital assistant and try the RealCTS tile.";
         if (mode == TriggerStrategyManager.Mode.CSService) return module.service;
         if (mode == TriggerStrategyManager.Mode.CSHelper) return "Firmware lacks the configured Google contextual helper.";
         if (!c.visCandidate()) return "No eligible Google contextual search handler for this configuration.";

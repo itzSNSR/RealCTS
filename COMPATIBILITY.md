@@ -6,14 +6,15 @@ The APK declares minimum API 28 and target API 36. Runtime success requires obse
 |---|---|---|---|
 | Samsung One UI / Core | 10–16 | Not tested | Not tested |
 | Motorola | 10–16 | Not tested | Not tested |
-| Vivo / iQOO | 10–16 | Not tested | Not tested |
+| Vivo V2437 | 16 | ASSIST key event verified with Google selected | Native overlay verified; temporary switching untested |
+| Other Vivo / iQOO | 10–16 | Not tested | Not tested |
 | OPPO / Realme | 10–16 | Not tested | Not tested |
 | OnePlus | 10–16 | Not tested | Not tested |
 | Xiaomi / Redmi / POCO | 10–16 | Not tested | Not tested |
 | Google Pixel | 10–16 | Not tested | Not tested |
 | Nothing, HMD / Nokia, ASUS, Sony, Lenovo, Tecno, Infinix and other Android | 9–16 | Not tested | Not tested |
 
-No device test results have been submitted. “Verified working” and “verified failing” require a device observation with the exact build and mode. “Unsupported” applies to a specific missing platform prerequisite, such as installation below API 28, a missing Google app, CSService without an authorized framework endpoint, or switched VIS without its ADB grant. No manufacturer-wide failure is inferred.
+Vivo V2437 on Android 16 was tested separately below. “Verified working” and “verified failing” require a device observation with the exact build and mode. “Unsupported” applies to a specific missing platform prerequisite, such as installation below API 28, a missing Google app, CSService without an authorized framework endpoint, or switched VIS without its ADB grant. No manufacturer-wide failure is inferred.
 
 ## Gesture differences
 
@@ -25,3 +26,7 @@ No device test results have been submitted. “Verified working” and “verifi
 ## Manual evidence to record
 
 Record the model, firmware build, Android API, Google app version, default assistant, enabled routes, and pre-test voice component. Test the dashboard and gesture separately. Confirm the selection interaction, original foreground app after dismissal, repeated invocations, denial with the grant absent, and restoration after a successful or interrupted switch. Record observed and expected outcomes independently. A screenshot of the app dashboard or an accepted Binder request alone does not establish overlay success.
+
+## Verified device result · Vivo V2437, Android 16
+
+With RealCTS 1.3 in Automatic mode, Google selected as assistant, RealCTS Search screen enabled in Accessibility and assistant-panel mode on, the standard Android ASSIST key event opened the native Google selection overlay over Display settings. USB automated the test key press and captured the screenshot. The runtime route used no ADB grant, root, Shizuku or voice-service switch. A physical Home hold, spoken hotword and other assistant panel implementations remain unverified.
