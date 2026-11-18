@@ -37,7 +37,7 @@ public final class Dashboard extends AppCompatActivity {
     private static final String GRANT = "adb shell pm grant com.realcts.app android.permission.WRITE_SECURE_SETTINGS";
     private static final String REVOKE = "adb shell pm revoke com.realcts.app android.permission.WRITE_SECURE_SETTINGS";
     private static final String[] STEPS = {"Check this device", "Check Google search", "Choose your assistant",
-            "Choose a trigger", "Check permissions", "Test the Google overlay", "Test your gesture"};
+            "Choose a trigger", "Setup without a computer", "Test the Google overlay", "Test your gesture"};
 
     @Override protected void onCreate(Bundle saved) {
         super.onCreate(saved);
@@ -147,17 +147,25 @@ public final class Dashboard extends AppCompatActivity {
     private void test() { startActivity(new Intent(this, LocalEntry.class)); }
     private void assistantChoice() {
         boolean independent = caps.helper || caps.googleTarget && SearchActionService.available();
-        if (independent || State.mode(this) != TriggerStrategyManager.Mode.Automatic) {
+        if (State.mode(this) != TriggerStrategyManager.Mode.Automatic) {
+            para("A manual mode is selected. Direct VIS needs Google active. Choose RealCTS only if your selected route works with another assistant.");
             action("Set RealCTS as assistant", () -> Registration.open(this, true), false);
         } else if (!caps.googleActive) {
             para("For this setup, select Google in Digital assistant app. Return here to test, then use the RealCTS tile over another app.");
             action("Choose Google in Android settings", () -> Registration.open(this, false), true);
+            if (independent) action("Set RealCTS as assistant", () -> Registration.open(this, true), false);
         } else {
-            para("Google voice service is active. To open Circle to Search from the assistant gesture, enable the switch below and RealCTS Search screen in Accessibility. RealCTS dismisses the supported Google assistant panel when it appears.");
+            para("Google voice service is active. First test Circle to Search. If you can select text, turn on the separate assistant-panel shortcut below and enable RealCTS Search screen in Accessibility. A supported Google panel may flash briefly.");
             toggle("Open Circle to Search when Assistant opens", "assistantPanel");
             if (prefs.getBoolean("assistantPanel", false) && !SearchActionService.isConnected())
-                action("Open Accessibility settings", () -> startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)), true);
+                action("Open Accessibility settings", this::openAccessibility, true);
             tileSetup();
+        }
+    }
+    private void openAccessibility() {
+        try { startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)); }
+        catch (ActivityNotFoundException e) {
+            Toast.makeText(this, "Open Android Settings, then Accessibility and RealCTS Search screen.", Toast.LENGTH_LONG).show();
         }
     }
     private void tileSetup() {
@@ -185,17 +193,10 @@ public final class Dashboard extends AppCompatActivity {
                 action("Open Android assistant settings", () -> Registration.open(this, false), false); break;
             case 3: para("Automatic mode checks the firmware helper, the native Search screen action, and Google’s active voice service. Current route · " + route());
                 action("Choose mode", this::chooseMode, false); break;
-            case 4: para("Use Automatic mode for setup without a computer. If a route is already available, continue to the test.");
+            case 4: para("Recommended for most users. Keep Google as the digital assistant and choose Automatic. No ADB permission is needed. Continue to test the overlay, then return here to set up your gesture.");
                 if (State.mode(this) != TriggerStrategyManager.Mode.Automatic)
                     action("Use Automatic mode", () -> { prefs.edit().putString("mode", "Automatic").apply(); refresh(); }, true);
-                if (Build.VERSION.SDK_INT >= 30) {
-                    para("For a RealCTS assistant gesture, first check for a CSHelper or SearchScreen route. Accessibility can detect the launcher’s Search screen action if available. If neither route appears, keep Google selected and use the tile.");
-                    action("Open Accessibility settings", () -> {
-                        try { startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)); }
-                        catch (ActivityNotFoundException e) { Toast.makeText(this, "Open Accessibility in Android Settings.", Toast.LENGTH_LONG).show(); }
-                    }, false);
-                }
-                para("Alternatively, select Google as digital assistant, then try Test Circle to Search or the RealCTS Quick Settings tile. Google must support native search on this phone.");
+                if (State.mode(this) == TriggerStrategyManager.Mode.Automatic) assistantChoice();
                 action("Open assistant settings", () -> Registration.open(this, false), false);
                 para("Candidate route · " + route());
                 action("Recheck this phone", this::refresh, false); break;
@@ -208,9 +209,10 @@ public final class Dashboard extends AppCompatActivity {
         if (step > 0) action("Previous step", () -> { step--; render(); }, false);
     }
     private void permissionControls() {
-        para("ADB permission · " + (caps.canWrite ? "Granted" : "Absent"));
+        para("Only manual VIS with temporary switching needs this setup. For Automatic or an already-active Google voice service, skip the grant.");
+        para("ADB permission on this phone · " + (caps.canWrite ? "Granted" : "Absent"));
         toggle("Allow temporary Google voice-service switching", "switch");
-        para("From a computer with USB debugging authorized, run the following command only if you want switching.");
+        para("To use switching, select VIS in Advanced settings, allow switching above, then run this command from an authorized computer. The grant applies to this installation on this phone.");
         para(GRANT);
     }
     private void permissions() {
@@ -222,6 +224,10 @@ public final class Dashboard extends AppCompatActivity {
     private void advanced() {
         title("Advanced settings");
         action("Trigger mode · " + State.mode(this), this::chooseMode, false);
+        para(modeHelp(State.mode(this)));
+        if (State.mode(this) == TriggerStrategyManager.Mode.SearchScreen)
+            action("Open Accessibility settings", this::openAccessibility, false);
+        para("Current candidate · " + route() + ". An unavailable route needs additional setup or firmware support. Confirm an eligible route with the dashboard test.");
         action("Invocation delay · " + prefs.getInt("delay", 0) + " ms", () -> {
             int[] values = {0, 150, 300, 600, 1000};
             new MaterialAlertDialogBuilder(this).setTitle("Invocation delay")
@@ -241,10 +247,29 @@ public final class Dashboard extends AppCompatActivity {
     private void chooseMode() {
         TriggerStrategyManager.Mode[] modes = TriggerStrategyManager.Mode.values();
         String[] labels = new String[modes.length];
-        for (int i = 0; i < modes.length; i++) labels[i] = modes[i].name();
-        new MaterialAlertDialogBuilder(this).setTitle("Trigger mode").setSingleChoiceItems(labels, State.mode(this).ordinal(), (d, i) -> {
-            prefs.edit().putString("mode", labels[i]).apply(); d.dismiss(); refresh();
+        for (int i = 0; i < modes.length; i++) labels[i] = modes[i].name() + "\n" + modeHelp(modes[i]);
+        ArrayAdapter<String> choices = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, labels) {
+            @Override public View getView(int position, View recycled, ViewGroup parent) {
+                TextView row = (TextView) super.getView(position, recycled, parent);
+                row.setSingleLine(false);
+                row.setLayoutParams(new AbsListView.LayoutParams(-1, -2));
+                row.setPaddingRelative(dp(16), dp(10), dp(16), dp(10));
+                return row;
+            }
+        };
+        new MaterialAlertDialogBuilder(this).setTitle("Trigger mode").setSingleChoiceItems(choices, State.mode(this).ordinal(), (d, i) -> {
+            prefs.edit().putString("mode", modes[i].name()).apply(); d.dismiss(); refresh();
         }).show();
+    }
+    private static String modeHelp(TriggerStrategyManager.Mode mode) {
+        switch (mode) {
+            case Automatic: return "Recommended. Checks native routes without ADB or LSPosed.";
+            case VIS: return "Uses active Google voice service. Optional switching requires ADB authorization.";
+            case CSHelper: return "Requires a firmware helper configured for Google. Some builds can use an optional System UI module.";
+            case CSService: return "Requires a system search service and compatible LSPosed integration.";
+            case SearchScreen: return "Android 11+. Enable RealCTS Search screen in Accessibility. The launcher must offer the native search action.";
+            default: throw new AssertionError(mode);
+        }
     }
     private void diagnostics() {
         title("Diagnostics"); para(status()); section("Native capabilities");

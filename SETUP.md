@@ -1,53 +1,153 @@
-# RealCTS
+# RealCTS setup guide
 
-RealCTS registers as an Android digital assistant and requests Google’s native Circle to Search over the foreground app. The APK installs from Android 9 (API 28) and targets Android 16 (API 36). The Google app, Android framework configuration, and gesture routing on the phone determine what happens. The assistant-panel route was verified on Vivo V2437, Android 16. See COMPATIBILITY.md for the test scope.
+Start with the phone-only method. The success check is simple: open another app, invoke the assistant, select something on the original screen, then use Back to return. Installation is supported from Android 9. The routes available after installation depend on the phone, launcher and Google app.
 
-## Install and try it
+## Install on the phone
 
-1. Install the supplied `RealCTS-debug.apk` from Files, or run `adb install -r RealCTS-debug.apk` from its directory.
-2. Open RealCTS and select **Guided setup**. If holding Home or the navigation handle already opens Google’s selection overlay, keep the existing assistant configuration.
-3. Follow the assistant choice shown on the dashboard. Choose Google for Direct mode, or RealCTS for the gesture when CSHelper or SearchScreen is available. If the role prompt is unavailable, use Android Settings → Apps → Default apps → Digital assistant app. Labels depend on the firmware.
-4. Read **Candidate route** in the dashboard. Leave the trigger mode on **Automatic** for the first test. A direct voice request requires Google’s voice service to be active. Select **Setup without a computer**. On Android 11 or newer, the optional **RealCTS Search screen** accessibility service checks for the native launcher action. If no route is available, keep Google as the default assistant and test the RealCTS tile.
-5. Tap **Test Circle to Search**. Check that you can circle text and dismiss Google’s overlay back to the original screen. In **Diagnostics**, record what actually appeared. Reporting a missing overlay or different interface pauses subsequent requests until you choose **Allow another manual test**.
-6. Open another app and invoke the gesture assigned to the digital assistant. Use the Quick Settings tile or the launcher’s RealCTS long-press shortcut for a separate entry test. Each entry calls the same trigger service.
+1. On the phone, open the [RealCTS release](https://github.com/itzSNSR/RealCTS/releases/tag/v1.3). Under **Assets**, download **RealCTS-debug.apk**.
+2. Open Downloads and tap the APK. If Android asks, allow installation from the app opening the file, return, and tap **Install**. You can turn that installation permission off afterward.
+3. Open RealCTS. On the dashboard, check **Google app · Detected**. If it is missing, enable or install the Google app in this Android profile, update it through Google Play where available, and reopen RealCTS. If a work or family policy blocks installation or accessibility, check with the device administrator.
 
-## Optional ADB permission
+## Setup without a computer
 
-Use this only for the **Switch** route. With USB debugging authorized, run
+1. Open Android **Settings**, search for **Digital assistant app**, then choose **Google**. A common path is **Apps → Default apps → Digital assistant app**. Some phones ask you to tap the current assistant a second time to open the list.
+2. Open RealCTS. Tap **Advanced settings → Trigger mode → Automatic** and return to the dashboard. **Setup without a computer** also takes you to the relevant guided step.
+3. Tap **Test Circle to Search**. Tap a word in the overlay and press Back. If the test fails, open **Diagnostics** before configuring a gesture.
+4. For the Google-panel method, keep Google selected and turn on **Open Circle to Search when Assistant opens** when offered on the dashboard. Enable **RealCTS Search screen** in Android Accessibility. On v1.3 the dashboard can instead offer **Set RealCTS as assistant** if it detects an independent native route. You can use that route for an OS-assigned assistant gesture.
+5. Open Settings or another ordinary app. With three-button navigation, hold the **Home** button. With gesture navigation, try the phone’s configured assistant gesture, such as swiping from a bottom corner. Check that the overlay lets you select something from that app. Dismiss it with Back.
+6. If the manual test works and Gemini stays open, check the panel switch, **Automatic**, and the enabled accessibility service. If the launcher routes the gesture elsewhere, try the RealCTS Quick Settings tile to isolate the gesture from the trigger.
+
+This setup requires a compatible Google panel for the panel shortcut and a working native route. It needs no PC, ADB, Shizuku or root. **Default assistant · Inactive** is expected when Google holds the role; that status describes RealCTS.
+
+## Enable accessibility
+
+Open **Settings → Accessibility**, then **Installed apps**, **Downloaded apps**, or **Installed services**. Choose **RealCTS Search screen**, enable the service, and review Android’s confirmation. Return to RealCTS. If Android restricts a sideloaded service, review the phone’s notice and the app’s **App info** settings. Managed phones can limit this choice.
+
+The service has two uses. SearchScreen checks for an advertised system action. Separately, assistant-panel mode listens for window-state changes from the Google app and recognizes a specific panel class. Neither use retrieves window contents. Turning off the panel switch stops panel monitoring. Turning off the Android service also removes access to the SearchScreen action.
+
+## Setup with a computer
+
+Follow this only for manual **VIS** with temporary switching. Install RealCTS first.
+
+1. On Android, open **About phone** and tap **Build number** seven times (on Samsung, look under **Software information**). Confirm your PIN if prompted. Go back to Settings, open **Developer options**, and enable **USB debugging**.
+2. Download **SDK Platform Tools** for your computer and extract the archive. No Android Studio or emulator is required. [Official Windows, macOS and Linux downloads](https://developer.android.com/tools/releases/platform-tools)
+3. **Windows:** Open the extracted `platform-tools` folder in PowerShell. Use `.\adb.exe` in place of `adb` in each command below. If Windows fails to recognize the phone, install its manufacturer’s USB driver. **macOS:** Open Terminal in the extracted folder and use `./adb`. **Linux:** Do the same; if ADB reports insufficient USB permissions, configure the appropriate udev rules for your distribution. If Platform Tools is already on your PATH, use `adb` as written. [Android USB setup](https://developer.android.com/studio/run/device)
+4. Connect the unlocked phone with a data-capable USB cable. Run the following, accept the **Allow USB debugging** prompt on the phone, then run it again.
+
+```shell
+adb devices
+```
+
+5. Continue when the intended phone is listed as **device**. For **unauthorized**, unlock it and accept the prompt. For an empty list, check the cable, port, USB debugging, and OS-specific driver or permissions. If several devices appear, disconnect the others or insert `-s SERIAL` immediately after `adb` in each device command.
+6. Grant the optional permission to the installed RealCTS package on this phone.
 
 ```shell
 adb shell pm grant com.realcts.app android.permission.WRITE_SECURE_SETTINGS
 ```
 
-Then turn on **Configure permissions → Allow temporary Google voice-service switching**. Both the grant and this switch are required. Android presents no ordinary runtime dialog for this permission. Without it, configured helper, privileged module service, and already-active Google voice routes can still be eligible.
+7. Reopen RealCTS and check **Secure settings · Granted**. Follow the switching instructions below. This grant belongs to that installed package on that phone. Sharing the APK does not transfer it. Normal in-place updates with the same package and signing key generally retain it. Uninstalling removes it.
 
-RealCTS writes only the current profile’s `voice_interaction_service` setting. It journals the exact previous value, including absent and empty values, and the observed assistant setting before changing anything. The assistant role is selected by the user in Android settings. RealCTS checks the current settings before restoration and preserves a visible user change. Android provides no cross-app atomic compare-and-set for these settings. If a permission is revoked mid-switch or a ROM prevents recovery, reopen RealCTS, check the ADB grant, use **Advanced settings → Recover saved voice service**, and verify Android’s assistant picker.
+## Temporary switching and recovery
 
-Finish recovery and turn off switching before revoking the grant.
+1. Select **Advanced settings → Trigger mode → VIS**. Open **Configure permissions** and turn on **Allow temporary Google voice-service switching**. Both the device grant and the in-app opt-in are required. Selecting **Automatic** never enables switching.
+2. To have the OS launch RealCTS on the assistant gesture, choose **Set RealCTS as assistant** and select RealCTS in Android. With another voice service active or none selected, look for **Candidate route · Switch**. If Google is already active, **Direct** is expected.
+3. Tap **Test Circle to Search**, dismiss the overlay and verify the original digital assistant in Android settings. Then test from another app. RealCTS records the previous voice-service value before writing and checks ownership before restoring. A persisted job and the next app launch can retry an interrupted restoration; execution timing depends on Android.
+4. Before revoking the grant, finish the active test. Check **Diagnostics → Pending voice-service restoration**. If true, keep the grant, open **Advanced settings → Recover saved voice service**, and verify the intended assistant in Android Settings. Turn off temporary switching and run
 
 ```shell
 adb shell pm revoke com.realcts.app android.permission.WRITE_SECURE_SETTINGS
 ```
 
-## Native trigger routes
+If you already revoked access mid-switch, restore the grant long enough to run recovery, or manually reselect your intended assistant. Avoid clearing app data during recovery because it holds the saved value.
 
-| Route | Required evidence | What RealCTS does |
-|---|---|---|
-| CSHelper | Android framework search key, Google provider, a matching factory/system Google activity, and a configurable legacy fallback | Sends the native contextual search bundle through the voice interaction manager and disables the legacy voice fallback. The optional scoped module can make the same request from System UI. |
-| CSService | User-enabled LSPosed API 101-compatible module in System UI, a responding receiver in this user profile, Google configured as the system provider, a matching Google system activity, and System UI’s existing contextual-search permission | Calls the framework contextual search manager for the navigation-handle entry point. The service performs its normal permission check. |
-| SearchScreen | User-enabled accessibility service on API 30+, advertised Launcher3 Search screen action (ID 500), and Google configured as the framework search provider | Rechecks the action before asking Android to perform it. Requests no window content, gesture injection, screenshots or event stream. |
-| Direct VIS | Google voice service already active, with no conflicting configured provider | Sends the MiCTS native entry-point bundle using CTSLauncher’s Binder transport. |
-| Switch VIS | Same activity evidence, discovered Google voice service, explicit switching opt-in, and ADB grant | Creates a recovery record, switches, checks the active service where possible, dispatches the VIS request, then restores. |
+## Compare modes
 
-Automatic mode uses the stock helper, an available native Search screen action, or already-active Google voice service in that order. It never selects temporary switching or LSPosed. Advanced users can explicitly select VIS for authorized switching, or CSHelper / CSService for module integration. Selecting a mode manually constrains the request to that mode. A rejected request produces a diagnostic without starting a second search UI. Feature detection uses runtime evidence. Manufacturer and model appear only in diagnostics.
+Choose **Advanced settings → Trigger mode**. All routes require an enabled Google app. “Home” below means a Home hold or gesture that the OS actually assigns to the assistant. A manufacturer can reserve a gesture for a different action.
 
-For module use, enable RealCTS with **System UI** scope in a compatible LSPosed manager, reload the scope, then enable **Check optional LSPosed System UI integration** in Advanced settings. The app probes helper and service availability separately. A framework permission denial or missing provider remains an unsupported configuration. RealCTS does not change the framework provider, spoof a phone model, or alter Google flags. The narrower module therefore covers fewer configurations than upstream MiCTS. In particular, it cannot create a contextual-search service that the ROM omitted.
+| Mode | Android requirement | Default assistant / voice service | Accessibility | PC / ADB | Root / LSPosed | Home gesture and limits |
+| --- | --- | --- | --- | --- | --- | --- |
+| Automatic | App minimum 9; each route has its own checks | Google for panel method; RealCTS may hold role for independent routes | Panel or SearchScreen only | No | No | Panel handoff or OS dispatch to RealCTS; requires a working candidate |
+| VIS · Direct | 9–16 in this build | Active Google voice service | No | No | No | Tile or test directly; for a Google-panel gesture, use Automatic |
+| VIS · Switch | 9–16 | Another assistant may be selected; Google voice service must be discoverable | No | Yes, one-time grant per installation | No | OS must dispatch to RealCTS; switching and restoration depend on firmware |
+| CSHelper | Framework helper, generally Android 14 QPR3+; current client checks through API 36 | Firmware provider must be Google; role can be RealCTS | No | No app ADB grant | Optional for module path | OS dispatch to RealCTS; firmware must expose required resources and Google activity |
+| CSService | System contextual search manager, normally Android 15+; module loads from API 34 | Google configured as provider; role can be RealCTS | No | No app ADB grant | Yes | OS dispatch to RealCTS; requires privileged System UI endpoint |
+| SearchScreen | Android 11+ system actions; route checked through API 36 | Google configured as framework provider; role can be RealCTS | Yes | No | No | OS dispatch to RealCTS; launcher must advertise Search screen |
 
-## Troubleshooting
+### Automatic
 
-- **Inactivity after the gesture.** Compare the last request timestamp before and after invoking the assistant over a different application. If it did not advance and the dashboard test did, check the selected digital assistant and the phone’s navigation settings. A gesture dedicated to an OEM assistant or to built-in Circle to Search can bypass the assistant role.
-- **Request accepted but the overlay is missing.** The framework can accept the bundle before the Google app decides what to display. VIS can yield a generic Google assistant screen on some devices. Record this as a failed visual test in Diagnostics. The optional accessibility service cannot read window content or capture the screen. Visual confirmation is required. Its code launches no Lens, Gemini, browser, or third-party search intent.
-- **No eligible route.** Check that the Google app is enabled in the current Android user/profile. Review Diagnostics for service, activity and helper detection. A Google package alone is insufficient evidence for an attempt. Some Google builds can conceal a usable native entry point from these conservative checks.
+Select **Automatic** in the mode picker. RealCTS tries the configured stock helper, the available Search screen system action, then direct Google voice service eligibility, in that order. It selects one candidate before dispatch. Automatic never invokes temporary switching or a privileged module service. Test on the dashboard first. If the candidate is unavailable, select Google as digital assistant and recheck **Diagnostics → Google voice active**.
+
+### VIS
+
+Select **VIS** in the mode picker. **Direct** requires Google’s voice interaction service to be active and no conflicting configured search provider. Keep Google as digital assistant and use the Test button or Quick Settings tile. No PC, root or accessibility service is required. A blocked private framework interface or Google eligibility can still prevent the overlay.
+
+**Switch** temporarily selects the discovered Google voice service, sends the native request, then restores the recorded value. Use the computer and recovery steps above if you need RealCTS to receive the OS gesture. If **Switch** is unavailable, check the Google component, visible native activity, grant and in-app toggle in Diagnostics or Configure permissions. Do not grant ADB access for a working **Direct** route.
+
+### CSHelper
+
+Select **CSHelper** in the picker. RealCTS checks the framework search key, Google provider, a configurable legacy fallback and a matching system Google activity. When supported, the voice manager dispatches to the native helper independently of the default Google voice service. Try the dashboard test without root first. If **Firmware helper configured** is false, see the optional module setup below. A missing firmware helper can remain unavailable even with a module.
+
+### CSService
+
+Select **CSService** in the picker and complete **Configure LSPosed** below. System UI must have its existing contextual-search permission, Google must be configured as system provider, and the manager and Google system activity must exist. Test only after **Module service** reports ready. If it reports a missing manager, wrong provider or denied permission, choose another eligible mode. The secure-settings ADB grant does not provide this permission.
+
+### SearchScreen
+
+Select **SearchScreen** in the picker. On Android 11 or newer, enable **RealCTS Search screen** in Android Accessibility and reopen RealCTS. With the Google provider configured, the service checks Android’s current action list for the launcher's Search screen action (ID 500). Look for **Candidate route · SearchScreen**, then test. Accessibility being enabled by itself does not create the action. If unavailable, try Automatic with Google selected. This mode needs neither a PC nor root.
+
+### Assistant-panel mode
+
+**Open Circle to Search when Assistant opens** is a separate dashboard switch. Leave the trigger mode on **Automatic**, keep Google’s voice service active, and enable Accessibility. When the supported Google panel appears on an unlocked screen, RealCTS dismisses it and requests search over the preceding app. The panel can flash briefly. A different panel class, a spoken hotword without a panel, or a reserved gesture may not trigger the handoff. Disable the switch to resume normal assistant behavior.
+
+## Configure LSPosed
+
+1. Use a device already configured with a compatible rooted LSPosed environment supporting module API 101. The RealCTS System UI module loads on Android 14+; the underlying service or helper must also exist.
+2. Enable **RealCTS** in your module manager and select **System UI** as its scope. Reload the scope using the manager’s supported restart procedure.
+3. In **Advanced settings**, explicitly choose **CSHelper** or **CSService** and enable **Check optional LSPosed System UI integration**. Return to Advanced settings or Diagnostics and read **Module helper** and **Module service** separately.
+4. Test an eligible route on the dashboard before configuring Android to use RealCTS as assistant. The module checks the current user’s System UI response and respects framework permissions. It cannot supply an omitted provider, bypass a permission denial, or turn on a feature Google has disabled.
+
+## Test the native overlay
+
+Use an unlocked, ordinary screen such as Display settings. First tap **Test Circle to Search** in RealCTS. Look for Google’s selection UI over the current screen, select a visible word or circle an item and press Back. Repeat over another app with your assistant gesture. In **Diagnostics**, record what appeared. An accepted request proves dispatch only. Reporting a different interface or no overlay pauses requests until you select **Allow another manual test**.
+
+## Device settings
+
+Menu names vary by OS release, navigation mode, region and launcher. The terms below are places to look or search for in Android Settings. Only the models listed in the [test matrix](COMPATIBILITY.md) have device evidence.
+
+| Phone | Where to look |
+| --- | --- |
+| Samsung One UI / Core | **Apps → Choose default apps → Digital assistant app**. Check **Display → Navigation bar** for native Circle to Search. Compatible Side button assignments are under **Advanced features**. |
+| Motorola | Look under **Apps → Default apps** and **Gestures → System navigation**. Check the gesture-navigation options for **Swipe to invoke assistant**. |
+| Vivo / iQOO | Search **Default apps** or **Digital assistant app**, then **System navigation**. Check whether the shortcut opens Google or an OEM panel. |
+| Realme | Search **Default apps**, then **System navigation** or **Gestures**. Verify which app the configured gesture opens. |
+| OPPO | Look under **Apps → Default apps** where available. Search **System navigation** and **Power button** for gesture assignments. |
+| OnePlus | Search **Default apps** and **System navigation**. For a button gesture, also search **Power button**. |
+| Xiaomi / Redmi / POCO | Search **Default apps** or **Assist & voice input**. Check **Gesture shortcuts** or **System navigation** for launcher-specific assignments. |
+| Nothing OS | Look under **Apps → Default apps**. Search **Gestures** and **Navigation mode** for the current navigation controls. |
+| Google Pixel | Look under **Apps → Default apps**, then search **Circle to Search** and **Navigation mode**. Try the built-in Home or navigation-handle hold first. |
+| Other Android phones and tablets | Search Settings for **Digital assistant app**, **Assist**, **Accessibility** and **System navigation**. Use the tile to test independently of a reserved gesture. |
+
+## Troubleshooting by symptom
+
+| Symptom | Check and next step |
+| --- | --- |
+| VIS needs Google active | Read **Google voice active** in Diagnostics. Select Google in Android default apps, unlock and retry Direct. For an intentional temporary switch, follow the manual VIS procedure. |
+| Switching permission missing | Check **Secure settings**, the **Allow temporary…** toggle and **VIS** mode. Recheck that ADB targeted the same phone and installed package. |
+| Gemini opens; manual test works | Confirm **Automatic**, Google active, panel switch enabled and the accessibility service enabled. Check whether the last-trigger timestamp changes after the gesture. A different Google panel can be unrecognized. |
+| Accessibility disabled or stopped | Check Android Accessibility for the service. Re-enable it if stopped, reopen RealCTS and retry. Check per-app battery or background restrictions if this recurs. |
+| SearchScreen unavailable | Verify API 30+, active service, Google framework provider and candidate route. Use Direct if the launcher omits the action. |
+| CSHelper unavailable | Check **Firmware helper configured**; for explicit module use, check **Module helper**. Return to Automatic or Direct when neither path is eligible. |
+| CSService unavailable | Check **Module service**, module scope, framework API and selected mode. ADB switching permission cannot replace System UI access. |
+| Holding Home does nothing | Check three-button versus gesture navigation, the assistant selected in Android, and whether the OS reserves Home. Compare the dashboard timestamp before and after and test the configured assistant gesture. |
+| Native request accepted; no overlay | Try a non-sensitive screen, update Google, and check Android’s assistant screen-data settings. Record the actual visual result in Diagnostics. |
+| Android blocks background invocation | Run a dashboard test while unlocked. Check the phone’s background restrictions for RealCTS and Google, then retry the gesture over Settings. |
+| Google app missing, disabled or outdated | Check the current Android profile in **Settings → Apps → Google**. Enable or update Google, then reopen RealCTS to refresh detection. |
+| Restoration pending | Keep the grant, reopen RealCTS, run **Recover saved voice service** and check Android’s assistant picker. Use the recovery procedure above before revoking access. |
+
+### Recovery details and diagnostic logs
+
+RealCTS writes only the current profile’s `voice_interaction_service` setting. It journals the exact previous value, including absent and empty values, and the observed assistant setting before changing anything. The assistant role is selected by the user in Android settings. RealCTS checks the current settings before restoration and preserves a visible user change. Android provides no cross-app atomic compare-and-set for these settings. If a permission is revoked mid-switch or a ROM prevents recovery, reopen RealCTS, check the ADB grant, use **Advanced settings → Recover saved voice service**, and verify Android’s assistant picker.
+
 - **Temporary switch rejected.** Check both the ADB grant and the in-app switch. Some firmware restricts writes to secure settings. RealCTS stops if it detects a change of assistant during setup. When the active-service probe is inaccessible, a 250 ms settling interval and settings readback are the available checks. The 1 s post-request window follows CTSLauncher. Neither proves that Google finished showing the overlay.
 - **Interruption while switching.** A persisted one-shot recovery job is scheduled before the write. Android controls its execution time. Reopening RealCTS also checks for a transaction. Force-stop, app data removal, and OEM job restrictions can prevent or defer automatic recovery. Manually reselect the intended assistant in settings if necessary.
 - **Report a failure.** Include the phone model, Android build, Google app version, selected mode, dashboard vs. gesture result, and Diagnostics text. For additional local logging, turn on **Advanced settings → Write local diagnostic messages to Logcat** and run `adb logcat -s RealCTS`. Verify what screen appeared before marking a device as working.
@@ -66,9 +166,3 @@ The debug artifact is `app/build/outputs/apk/debug/app-debug.apk`, package `com.
 ## Source and licensing
 
 This project is distributed under GPL-3.0-only. See [LICENSE](LICENSE), [source attribution and modifications](NOTICE.md), and the [compatibility and test matrix](COMPATIBILITY.md).
-
-
-
-## Assistant-panel mode
-
-On supported Google assistant builds, leave Google selected as digital assistant, use Automatic mode, enable **Open Circle to Search when Assistant opens** on the dashboard and enable **RealCTS Search screen** in Android Accessibility. Invoking the assistant can briefly show its panel. RealCTS recognizes the Google FloatyActivity window, dismisses it, and requests native search on the previous screen. This mode only subscribes to Google window-state changes while opted in, and does not retrieve window contents. Disable the switch to resume normal assistant behavior. Different assistant implementations and voice-only invocations may not show the recognized panel.
