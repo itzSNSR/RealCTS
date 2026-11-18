@@ -1,10 +1,12 @@
-# RealCTS
+# RealCTS — Google Circle to Search for More Android Phones
 
-Open Google’s native Circle to Search over the app you’re using when you invoke your Android assistant. Circle an image or tap text, then dismiss the overlay to return to your app.
+RealCTS connects your Android assistant shortcut to Google’s genuine native Circle to Search. Open it over the app you’re using, circle an image or tap text, then dismiss the overlay to return. Google supplies the selection interface. RealCTS does not substitute Google Lens.
 
-**[Download RealCTS 1.3 for Android](https://github.com/itzSNSR/RealCTS/releases/download/v1.3/RealCTS-debug.apk)** · [Release notes](https://github.com/itzSNSR/RealCTS/releases/tag/v1.3) · [Device compatibility](COMPATIBILITY.md)
+**[Download the RealCTS Circle to Search APK (v1.3)](https://github.com/itzSNSR/RealCTS/releases/download/v1.3/RealCTS-debug.apk)** · [Release notes](https://github.com/itzSNSR/RealCTS/releases/tag/v1.3)
 
-The APK installs on Android 9 and later and targets Android 16. The assistant shortcut below works entirely on the phone, with no ADB grant, root, or Shizuku. It requires a supported Google assistant panel and a working native Google search route.
+The APK targets Android 16 and can be installed on Android 9 or later. Some phones without an official Circle to Search shortcut still expose a native search route. On those phones, a supported Google assistant panel can open Circle to Search without root, ADB or Shizuku. Check your model’s test results or try the dashboard test before configuring a gesture.
+
+[Official website](https://itzsnsr.github.io/RealCTS/) · [Setup guide](SETUP.md) · [Device compatibility](COMPATIBILITY.md) · [Troubleshooting](#troubleshooting-and-supported-devices)
 
 ## Download and install
 
@@ -60,7 +62,7 @@ Tap **Test Circle to Search**, circle or tap a word, verify that Google lets you
 
 First check **Settings → Display → Navigation bar → Circle to Search**. On supported Galaxy models, enabling this setting lets you hold Home or the navigation handle to open Circle to Search directly. [Samsung’s Circle to Search guide](https://www.samsung.com/us/support/answer/ANS10000939/)
 
-To try RealCTS with the Side button, follow the four steps above. On One UI versions that offer the choice, set **Settings → Advanced features → Side button → Long press → Digital assistant**. On the Galaxy M21 we verified a long press on the on-screen Home button in three-button navigation. The Side button was not tested. [Samsung’s assistant setup guide](https://www.samsung.com/us/support/answer/ANS10010644/)
+To try RealCTS with the Side button, complete the phone-only setup above. On One UI versions that offer the choice, set **Settings → Advanced features → Side button → Long press → Digital assistant**. On the Galaxy M21 we verified a long press on the on-screen Home button in three-button navigation. The Side button was not tested. [Samsung’s assistant setup guide](https://www.samsung.com/us/support/answer/ANS10010644/)
 
 ### What has been verified
 
