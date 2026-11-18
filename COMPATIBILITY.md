@@ -4,7 +4,8 @@ The APK declares minimum API 28 and target API 36. Runtime success requires obse
 
 | Manufacturer | Android versions in scope | Assistant registration / gesture | Native overlay / restoration |
 |---|---|---|---|
-| Samsung One UI / Core | 10–16 | Not tested | Not tested |
+| Samsung Galaxy M21 (SM-M215F) | 12 | ASSIST key and on-screen Home hold verified with Google selected | Native overlay, text selection and return to Display settings verified |
+| Other Samsung One UI / Core | 10–16 | Not tested | Not tested |
 | Motorola | 10–16 | Not tested | Not tested |
 | Vivo V2437 | 16 | ASSIST key event verified with Google selected | Native overlay verified; temporary switching untested |
 | Other Vivo / iQOO | 10–16 | Not tested | Not tested |
@@ -30,3 +31,9 @@ Record the model, firmware build, Android API, Google app version, default assis
 ## Verified device result · Vivo V2437, Android 16
 
 With RealCTS 1.3 in Automatic mode, Google selected as assistant, RealCTS Search screen enabled in Accessibility and assistant-panel mode on, the standard Android ASSIST key event opened the native Google selection overlay over Display settings. USB automated the test key press and captured the screenshot. The runtime route used no ADB grant, root, Shizuku or voice-service switch. A physical Home hold, spoken hotword and other assistant panel implementations remain unverified.
+
+## Verified device result · Samsung Galaxy M21, Android 12
+
+Tested RealCTS 1.3 on SM-M215F with Google app 17.72.17.ve.arm64 and three-button navigation. Google was the active voice service, RealCTS Search screen was enabled in Accessibility, and assistant-panel mode was on. The app did not have WRITE_SECURE_SETTINGS.
+
+From Display settings, the standard ASSIST key opened the native Google selection overlay. Tapping the Display heading selected its text and offered Copy and Translate. Back returned to the same settings activity. A second invocation using a one-second touch at the on-screen Home button opened the overlay again and recorded a new RealCTS Direct request. USB automated the input. The hardware Side button and voice hotword were not tested.

@@ -19,9 +19,11 @@ To restore normal assistant behavior, turn off **Open Circle to Search when Assi
 
 First check **Settings → Display → Navigation bar → Circle to Search**. On supported Galaxy models, enabling this setting lets you hold Home or the navigation handle to open Circle to Search directly. [Samsung’s Circle to Search guide](https://www.samsung.com/us/support/answer/ANS10000939/)
 
-To try RealCTS with the Side button, follow the four steps above. On One UI versions that offer the choice, set **Settings → Advanced features → Side button → Long press → Digital assistant**. Samsung device testing is still pending. [Samsung’s assistant setup guide](https://www.samsung.com/us/support/answer/ANS10010644/)
+To try RealCTS with the Side button, follow the four steps above. On One UI versions that offer the choice, set **Settings → Advanced features → Side button → Long press → Digital assistant**. On the Galaxy M21 we verified a long press on the on-screen Home button in three-button navigation. The Side button was not tested. [Samsung’s assistant setup guide](https://www.samsung.com/us/support/answer/ANS10010644/)
 
 ## What has been verified
+
+**Samsung Galaxy M21 (SM-M215F), Android 12, One UI 4.1.** With Google selected and assistant-panel mode enabled, holding the on-screen Home button opened the Google selection overlay over Display settings. The standard Android ASSIST key also worked. Tapping **Display** selected the text and offered **Copy** and **Translate**. Back returned to Display settings. USB supplied the test inputs; RealCTS had no secure-settings grant.
 
 On a **Vivo V2437 running Android 16**, RealCTS 1.3 opened Google’s selection overlay over Display settings after the standard Android **ASSIST** key event. Google remained selected, the accessibility service was enabled, and RealCTS had no secure-settings grant. USB supplied the test key event and captured the result. A physical Home hold, spoken hotword, and other manufacturers remain unverified. The build passed 19 JVM tests. [Compatibility matrix and test details](COMPATIBILITY.md)
 
